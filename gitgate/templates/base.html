@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %} | GitGate</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='bootstrap3/bootstrap.min.css')}}" />
+<style type="text/css">
+.code-line-added { 
+    background-color: #cfc;
+}
+.code-line-removed {
+    background-color: #fcc;
+}
+.color-outdated, .color-rejected {
+    color: #faa;
+}
+.color-merged, .color-approved { 
+    color: #3d3;
+}
+.color-committed { 
+    color: #aaf;
+}
+.color-reviewed { 
+    color: #0bd;
+}
+</style>
+</head>
+<body>
+<div class="container">
+{% block content %}
+{% endblock %}
+</div>
+</body>
+</html>

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Commit {{commit.sha1}}{% endblock %}
+{% block content %}
+<div>
+<h1>Commit Details</h1>
+<h3><a href="{{url_for('commits', pid=commit.project.id)}}">back to {{commit.project.name}}</a></h3>
+<table class="table table-striped">
+<tr>
+    <td>SHA1</td><td>{{commit.sha1}}</td>
+</tr>
+<tr>
+    <td>Author</td><td>{{commit.author_name}}
+    &lt;<a href="mailto:{{commit.author_email}}">{{commit.author_email}}</a>&gt;
+    </td>
+</tr>
+<tr>
+    <td>Date</td><td>{{commit.author_date}}</td>
+</tr>
+<tr>
+    <td>Status</td><td><b class="color-{{commit.status}}">{{commit.status}}</b></td>
+</tr>
+<tr>
+    <td>Notes</td><td><p>{{commit.message}}</p></td>
+</tr>
+</table>
+</div>
+
+<div>
+<ul>
+{% for frow in commit.files %}
+<li><b>{{frow.change_type}}</b> {{frow.file_path}} 
+    {% if frow.change_type != 'D' %}
+    <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{frow.file_path|urlencode}}">
+        Diff {{frow.sha1}}
+    </a>
+    {% endif %}
+</li>
+{% endfor %}
+</ul>
+</div>
+
+<div>
+{% if commit.status in ('committed','tested') %}
+
+{% if user.has_project_role(commit.project, 'reviewer') %}
+<form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='review')}}"
+    method="post" role="form">
+    <button type="submit" class="btn btn-success">Review</button>
+</form>
+{% endif %}
+
+{% if user.has_project_role(commit.project, 'approver') or user.has_project_role(commit.project, 'reviewer') %}
+<form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='reject')}}"
+    method="post" role="form">
+    <button type="submit" class="btn btn-danger">Reject</button>
+</form>
+{% endif %}
+
+{% elif commit.status == 'reviewed' %}
+{% if user.has_project_role(commit.project, 'approver') %}
+<form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='approve')}}"
+    method="post" role="form">
+    <button type="submit" class="btn btn-success">Approve</button>
+</form>
+{% endif %}
+
+{% if user.has_project_role(commit.project, 'approver') or user.has_project_role(commit.project, 'reviewer') %}
+<form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='reject')}}"
+    method="post" role="form">
+    <button type="submit" class="btn btn-danger">Reject</button>
+</form>
+{% endif %}
+
+{% elif commit.status == 'rejected' %}
+{% if user.has_project_role(commit.project, 'approver') or user.has_project_role(commit.project, 'reviewer') %}
+<form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='unreject')}}"
+    method="post" role="form">
+    <button type="submit" class="btn btn-warning">Un-reject</button>
+</form>
+{% endif %}
+
+
+{% endif %}
+</div>
+
+<div>
+<h3>Comments</h3>
+{% for l in commit.logs %}
+<p>At <span class="text-muted">{{l.created}}</span> {% if l.user %}<b>{{l.user.name}}</b> said:{% endif %}</p>
+    <blockquote>{{l.message}}</blockquote>
+{% endfor %}
+<form action="{{url_for('commit_action', pid=commit.project.id, cid=commit.id, action='comment')}}"
+    method="post" role="form">
+<textarea name="message" class="form-control"></textarea>
+<button type="submit" class="btn btn-default">Comment</button>
+</form>
+</div>
+{% endblock %}

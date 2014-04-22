@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Commits{% endblock %}
+{% block content %}
+<h1>Commits for {{project.name}}</h1>
+<h3><a href="{{url_for('projects')}}">back to projects</a></h3>
+<div>
+    <a href="{{url_for('commits', pid=project.id)}}"
+        class="btn btn-primary">All</a>
+    <a href="{{url_for('commits', pid=project.id)}}?status_filter=committed"
+        class="btn btn-info">Committed</a>
+    <a href="{{url_for('commits', pid=project.id)}}?status_filter=reviewed"
+        class="btn btn-info">Reviewed</a>
+    <a href="{{url_for('commits', pid=project.id)}}?status_filter=approved"
+        class="btn btn-success">Approved</a>
+    <a href="{{url_for('commits', pid=project.id)}}?status_filter=merged"
+        class="btn btn-success">Merged</a>
+    <a href="{{url_for('commits', pid=project.id)}}?status_filter=rejected"
+        class="btn btn-danger">Rejected</a>
+    <a href="{{url_for('commits', pid=project.id)}}?status_filter=outdated"
+        class="btn btn-danger">Outdated</a>
+</div>
+{% for c in commits %}
+<div>
+    <span class="text-muted">
+    {{c.author_date}}
+    </span>
+    <i>{{c.author_name}}</i> &mdash;
+    {{c.message}}
+    <b class="color-{{c.status}}">{{c.status}}</b>
+    <a href="{{url_for('commit', pid=project.id, cid=c.id)}}">View</a>
+</div>
+{% endfor %}
+{% endblock %}

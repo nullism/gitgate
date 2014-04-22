@@ -1,0 +1,2 @@
+# GitGate RTD Documentation
+

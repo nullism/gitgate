@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+{% for p in projects %}
+<div>
+<h3>{{p.name}}</h3>
+<p>Project path: <code>{{p.path}}</code></p>
+<p>Development clone url: <code>{{p.devel_clone_url}}</code></p>
+<p>Stable clone url: <code>{{p.stable_clone_url}}</code></p>
+<a class="btn btn-primary" href="{{url_for('commits', pid=p.id)}}">View Commits</a>
+</div>
+{% endfor %}
+{% endblock %}

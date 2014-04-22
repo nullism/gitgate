@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %} Git Diff {% endblock %}
+{% block content %}
+<div>
+    <h1>File Diff</h1>
+    <h3>
+        <a href="{{url_for('commit', pid=commit.project.id, cid=commit.id)}}">back to commit</a>
+    </h3>
+    <p><b>{{commit_file.change_type}}</b> {{commit_file.file_path}}</p>
+</div>
+<pre>
+{{diff|safe}}
+</pre>
+{% endblock %}
