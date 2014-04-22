@@ -22,6 +22,10 @@
 <tr>
     <td>Notes</td><td><p>{{commit.message}}</p></td>
 </tr>
+<tr>
+    <td>Checkout command</td>
+    <td><input type="text" class="form-control" value="git checkout {{commit.sha1}} ." /></td>
+</tr>
 </table>
 </div>
 
@@ -89,10 +93,16 @@
 <p>At <span class="text-muted">{{l.created}}</span> {% if l.user %}<b>{{l.user.name}}</b> said:{% endif %}</p>
     <blockquote>{{l.message}}</blockquote>
 {% endfor %}
+<div class="well">
 <form action="{{url_for('commit_action', pid=commit.project.id, cid=commit.id, action='comment')}}"
     method="post" role="form">
+<div class="form-group">
 <textarea name="message" class="form-control"></textarea>
+</div>
+<div class="form-group">
 <button type="submit" class="btn btn-default">Comment</button>
+</div>
 </form>
+</div>
 </div>
 {% endblock %}

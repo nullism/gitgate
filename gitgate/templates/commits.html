@@ -19,15 +19,50 @@
     <a href="{{url_for('commits', pid=project.id)}}?status_filter=outdated"
         class="btn btn-danger">Outdated</a>
 </div>
+{% if statuses %}
+<h3>Showing commits listed as <i>{{statuses|join(', ')}}</i></h3>
+{% else %}
+<h3>Showing all commits</h3>
+{% endif %}
+{% if commits.count() > 0 %}
+<table class="table table-hover table-striped">
+<thead>
+<tr>
+    <th>Author Date</th>
+    <th>Author</th>
+    <th>Message</th>
+    <th>Status</th>
+    <th>Actions</th>
+</tr>
+</thead>
+<tbody> 
 {% for c in commits %}
-<div>
-    <span class="text-muted">
-    {{c.author_date}}
-    </span>
-    <i>{{c.author_name}}</i> &mdash;
-    {{c.message}}
-    <b class="color-{{c.status}}">{{c.status}}</b>
-    <a href="{{url_for('commit', pid=project.id, cid=c.id)}}">View</a>
-</div>
+<!-- <div class="row">
+    <div class="col-sm-2">{{c.author_date}}</div>
+    <div class="col-sm-2">{{c.author_name}}</div>
+    <div class="col-sm-4">{{c.message}}</div>
+    <div class="col-sm-2">{{c.status}}</div>
+    <div class="col-sm-2">
+        <a href="{{url_for('commit', pid=project.id, cid=c.id)}}">View</a>
+    </div>
+</div> -->
+
+<tr>
+    <td><span class="text-muted">
+      {{c.author_date}}
+       </span>
+    </td>
+    <td><i>{{c.author_name}}</i></td>
+    <td>{{c.message}}</td>
+    <td><b class="color-{{c.status}}">{{c.status}}</b></td>
+    <td>
+        <a href="{{url_for('commit', pid=project.id, cid=c.id)}}">View</a>
+    </td>
+</tr>
 {% endfor %}
+</tbody>
+</table>
+{% else %}
+<h4>No results</h4>
+{% endif %}
 {% endblock %}

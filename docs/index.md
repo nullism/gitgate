@@ -1,5 +1,7 @@
 # GitGate Overview
 
+![Flow Chart](http://gitgate.nullism.com/uploads/gitgate-flow-basic.png)
+
 ## What is GitGate? 
 
 GitGate is a developer-friendly dual-repository code-review system for gatekeeping changes.

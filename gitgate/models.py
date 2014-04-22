@@ -8,11 +8,15 @@ database = SqliteDatabase(ggconf.DATABASE)
 def create_tables():
     User.create_table()
     Role.create_table()
-    UserRole.create_table()
     Project.create_table()
+    ProjectRole.create_table()
     Commit.create_table()
     CommitFile.create_table()
     CommitLog.create_table()
+
+def populate_data():
+    Role.create(name='reviewer')
+    Role.create(name='approver')
 
 class DBModel(Model):
     class Meta:
@@ -22,9 +26,13 @@ class User(DBModel):
 
     email = CharField(unique=True)
     name = CharField()
-    is_admin = BooleanField()
+    password = CharField()
+    is_admin = BooleanField(default=False)
     
     def has_project_role(self, project, role):
+        if role == 'admin':
+            return self.is_admin        
+    
         if self.is_admin:
             return True
 
@@ -53,6 +61,11 @@ class Project(DBModel):
         return self._git_control
 
 class Role(DBModel):
+    
+    NAMES = (
+        ('reviewer','Reviewer'),
+        ('approver','Approver'),
+    )
 
     name = CharField(unique=True)
     description = TextField(default=None, null=True)

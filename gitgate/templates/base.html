@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>{% block title %}{% endblock %} | GitGate</title>
-    <link rel="stylesheet" href="{{url_for('static', filename='bootstrap3/bootstrap.min.css')}}" />
+    <link rel="stylesheet" href="{{url_for('static', filename='bootstrap3/css/bootstrap.min.css')}}" />
+    <script src="{{url_for('static', filename='jquery/jquery.min.js')}}"></script>
 <style type="text/css">
 .code-line-added { 
     background-color: #cfc;
@@ -11,23 +12,46 @@
     background-color: #fcc;
 }
 .color-outdated, .color-rejected {
-    color: #faa;
+    color: #f22;
 }
 .color-merged, .color-approved { 
     color: #3d3;
 }
 .color-committed { 
-    color: #aaf;
+    color: #22f;
 }
 .color-reviewed { 
-    color: #0bd;
+    color: #0ad;
 }
 </style>
 </head>
 <body>
+{% include 'navbar.html' %}
 <div class="container">
+{% with messages = get_flashed_messages(category_filter=['message']) %}
+{% if messages %}
+<div class="alert alert-info">
+{% for msg in messages %}
+<p>{{msg}}</p>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+{% with errors = get_flashed_messages(category_filter=['error']) %}
+{% if errors %}
+<div class="alert alert-danger">
+{% for msg in errors %}
+<p>{{msg}}</p>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
 {% block content %}
 {% endblock %}
 </div>
+
+<script src="{{url_for('static', filename='bootstrap3/js/bootstrap.min.js')}}"></script>
 </body>
 </html>

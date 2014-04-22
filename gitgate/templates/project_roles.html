@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Project Roles{% endblock %}
+{% block content %}
+<h1>Roles for {{project.name}}</h1>
+<h3><a href="{{url_for('projects')}}">back to projects</a></h3>
+{% for role in roles %}
+<div class="well">
+<h3>{{role.name}}s</h3>
+{% if role.name == 'reviewer' %}
+    <ul>
+    {% for pr in reviewers %}
+        <li>
+        <form class="form-inline" 
+            action="{{url_for('project_role_delete', pid=project.id)}}" 
+            method="post">
+        {{pr.user.name}} (<a href="mailto:{{pr.user.email}}">{{pr.user.email}}</a>)
+        {% if user.is_admin %}
+        <input type="hidden" name="role_name" value="{{role.name}}" />
+        <input type="hidden" name="user_email" value="{{pr.user.email}}" />
+        <button class="btn btn-xs btn-danger" type="submit">&times;</button>
+        {% endif %}
+        </form>
+        </li>
+    {% endfor %}
+    </ul>
+{% elif role.name == 'approver' %}
+    <ul>
+    {% for pr in approvers %}
+        <li>
+        <form class="form-inline" 
+            action="{{url_for('project_role_delete', pid=project.id)}}" 
+            method="post">
+        {{pr.user.name}} (<a href="mailto:{{pr.user.email}}">{{pr.user.email}}</a>)
+        {% if user.is_admin %}
+        <input type="hidden" name="role_name" value="{{role.name}}" />
+        <input type="hidden" name="user_email" value="{{pr.user.email}}" />
+        <button class="btn btn-xs btn-danger" type="submit">&times;</button>
+        {% endif %}
+        </form>
+        </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if user.is_admin %}
+<form role="form" action="{{url_for('project_role_add', pid=project.id)}}" class="form-inline" method="post">
+<div class="form-group">
+    <input type="text" name="user_email" placeholder="user email address" class="form-control" />
+</div>
+<div class="form-group">
+    <input type="hidden" name="role_name" value="{{role.name}}" />
+    <button type="submit" class="btn btn-primary btn-full">Add</button>
+</div>
+</form>
+{% endif %}
+</div>
+{% endfor %}
+
+
+{% endblock %}

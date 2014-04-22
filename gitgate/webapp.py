@@ -3,12 +3,25 @@ import peewee
 import models as md
 import re
 from functools import wraps
+import hashlib
 
 app = f.Flask(__name__)
 
 ### ----------------------------------------------------------------------------
 ### Helper functions
 ### ----------------------------------------------------------------------------
+
+def requires_admin():
+    def wrapper(fn):
+        @wraps(fn)
+        def wrapped(*args, **kwargs):
+            user = get_user()
+            if not user.is_admin():
+                add_error("You're not authorized to do that")
+                f.abort(403)
+            return fn(*args, **kwargs)
+        return wrapped
+    return wrapper
 
 def requires_user(role=None):
     def wrapper(fn):
@@ -37,8 +50,10 @@ def add_error(msg):
     f.flash(msg, category='error')
 
 def get_user():
+    if not f.session.get('user_id'):
+        return None
     try:
-        user = md.User.get(id=1)
+        user = md.User.get(id=f.session.get('user_id'))
         f.g.user = user
     except:
         return None
@@ -71,23 +86,105 @@ def after_request(response):
 def index():
     return f.redirect(f.url_for('projects'))
 
+@app.route('/account', methods=['GET','POST'])
+@requires_user()
+def account():
+
+    """ Handles password, email, and name updates """
+
+    user = get_user()
+    if f.request.method == 'GET':
+        return f.render_template('account.html')
+    action = f.request.form.get('action')
+    if not action:
+        f.abort(400)
+
+    if action == 'update_password':
+        pw1 = f.request.form.get('password1','').strip()
+        pw2 = f.request.form.get('password2','').strip()
+        if len(pw1) < 6:
+            add_error('Passwords must be at least 6 characters')
+            return f.redirect(f.url_for('account'))
+        if pw1 != pw2:
+            add_error('Passwords do not match')
+            return f.redirect(f.url_for('account'))
+        user.password = hashlib.sha1(pw1).hexdigest()
+        user.save()
+        add_message('Passwords updated')
+        return f.redirect(f.url_for('account'))
+
+    if action == 'update_email':
+        new_email = f.request.form.get('email','').strip()
+        if not new_email or len(new_email) < 6:
+            add_error('Invalid email address specified')
+            return f.redirect(f.url_for('account'))
+   
+        try:
+            # PeeWee weirdness
+            ou = md.User.get(email=new_email)
+            add_error('That email address is already in use')
+            return f.redirect(f.url_for('account'))
+        except:
+            pass
+        user.email = new_email
+        user.save()
+        add_message('Email address updated')
+        return f.redirect(f.url_for('account'))
+
+    if action == 'update_name':
+        new_name = f.request.form.get('name','').strip()
+        if len(new_name) < 3:
+            add_error('Names must be at least 3 characters')
+            return f.redirect(f.url_for('account'))
+        user.name = new_name
+        user.save()
+        add_message('Name updated')
+        return f.redirect(f.url_for('account'))
+
+    add_error('Unknown action specified')
+    return f.redirect(f.url_for('account'))
+
+@app.route('/users', methods=['GET','POST'])
+@requires_admin()
+def users():
+    pass
+
 @app.route('/login', methods=['GET','POST'])
 def login():
+
+    """ Signs the user into GitGate and creates a session """    
+
     if f.request.method == 'GET':
         return f.render_template('login.html')
     email = f.request.form.get('email')
     password = f.request.form.get('password')
     try:
-        user = md.User.get(email=email, password=password)
+        pwhash = hashlib.sha1(password).hexdigest()
+        user = md.User.get(email=email, password=pwhash)
     except:
         add_error('Invalid email or password')
-        return f.redirect(url_for('login'))
+        return f.redirect(f.url_for('login'))
     add_message('Welcome back %s'%(user.name))
-    return f.redirect(url_for('index'))
+    f.session['user_id'] = user.id
+    return f.redirect(f.url_for('index'))
+
+@app.route('/logout')
+def logout():
+    
+    """ Destroys the user's session """
+    
+    if f.session.get('user_id'):
+        f.session['user_id'] = None
+        f.g.user = None
+        add_message('You have been logged out')
+    return f.redirect(f.url_for('login'))
 
 @app.route('/project/<int:pid>/commit/<int:cid>')
 @requires_user()
 def commit(pid, cid):
+    
+    """ Returns information about a commit """
+
     try:
         project = md.Project.get(id=pid)
         commit = md.Commit.get(id=cid)
@@ -187,7 +284,7 @@ def commits(pid):
     try:
         project = md.Project.get(id=pid)
     except:
-        abort(404)
+        f.abort(404)
 
     status_filter = f.request.args.get('status_filter','').strip()
     # Peewee queries are extra ugly - not sure why I chose it.
@@ -200,12 +297,83 @@ def commits(pid):
         (md.Commit.project == project) &
         (md.Commit.status << statuses)
     )
-    return f.render_template('commits.html', project=project, commits=commits)
- 
+    return f.render_template('commits.html', project=project, 
+        statuses=statuses, commits=commits)
+
+@app.route('/project/<pid>/roles')
+@requires_user()
+def project_roles(pid): 
+    try:
+        project = md.Project.get(id=pid)
+    except:
+        f.abort(404)
+    review_role = md.Role.get(name='reviewer')
+    approve_role = md.Role.get(name='approver')
+    reviewers = (md.ProjectRole.select()
+        .where(
+            (md.ProjectRole.project == project) &
+            (md.ProjectRole.role == review_role))
+        )
+    approvers = (md.ProjectRole.select()
+        .where(
+            (md.ProjectRole.project == project) &
+            (md.ProjectRole.role == approve_role))
+        )
+
+    roles = md.Role.select()
+    return f.render_template('project_roles.html', reviewers=reviewers, 
+        approvers=approvers, project=project, roles=roles)
+
+@app.route('/project/<pid>/role/add', methods=['POST'])
+def project_role_add(pid):
+    try:
+        project = md.Project.get(id=pid)
+    except:
+        f.abort(404)
+
+    role_name = f.request.form.get('role_name')
+    user_email = f.request.form.get('user_email','').strip()
+    if not user_email or not role_name:
+        add_error('You must specify a user email address and role')
+        return f.redirect(f.url_for('project_roles', pid=project.id))
+        
+    try:
+        user = md.User.get(email=user_email)
+        role = md.Role.get(name=role_name)
+    except:
+        add_error('User or role not found')
+        return f.redirect(f.url_for('project_roles', pid=project.id))
+    try:
+        ur = md.ProjectRole.get(project=project, user=user, role=role)
+        add_error('User already exists for that role (%s)'%(role.name))
+        return f.redirect(f.url_for('project_roles', pid=project.id))
+    except:
+        pass    
+    pr = md.ProjectRole.create(user=user, role=role, project=project)
+    add_message('User role created!')
+    return f.redirect(f.url_for('project_roles', pid=project.id))
+
+@app.route('/project/<pid>/role/delete', methods=['POST'])    
+def project_role_delete(pid):
+    try:
+        project = md.Project.get(id=pid)
+    except:
+        f.abort(404)
+    user_email = f.request.form.get('user_email')
+    role_name = f.request.form.get('role_name')
+    try:
+        user = md.User.get(email=user_email)
+        role = md.Role.get(name=role_name)
+        pr = md.ProjectRole.get(role=role, user=user, project=project)
+    except Exception as err:
+        f.abort(404)
+    
+    pr.delete_instance()
+    add_message('User removed from role: %s'%(role.name))
+    return f.redirect(f.url_for('project_roles', pid=project.id))
 
 @app.route('/projects')
 def projects():
     projects = md.Project.select()
     return f.render_template('projects.html', projects=projects)
 
-   

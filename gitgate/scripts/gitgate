@@ -1,0 +1,137 @@
+#!/usr/bin/env python2
+import argparse
+import os
+import random
+import sys
+import hashlib
+
+# Prefer local checkout GitGate to installed version
+gglocal = os.path.dirname(os.path.realpath(__file__))
+ggpath = os.path.join(gglocal, '../../')
+sys.path.insert(0, ggpath)
+
+def gen_random_string(length=20, letters=True, numbers=True, symbols=True):
+    strn = ''
+    chars = []
+    if letters:
+        chars += ['a','b','c','d','e','f','g','h','i','j','k',
+            'L','m','n','o','p','q','r','s','t','u','v','w',
+            'x','y','z']
+    if numbers:
+        chars += ['0','1','2','3','4','5','6','7','8','9']
+    if symbols:
+        chars += ['@','$','^','&','_','-','+','#']
+
+    if not chars:
+        raise Exception('No characters specified')
+    while len(strn) < length:
+        strn += random.choice(chars)
+    return strn
+
+def write_daemon(data):
+    path = data['path']
+    daemon = """#!/usr/bin/env python2
+import sys
+from gitgate import daemon
+# Add hooks with daemon.on_commit or daemon.on_merge
+#   Example: daemon.on_commit = my_local_function
+#   Arguments: commit, the commit object
+if __name__ == "__main__":
+    daemon.start()
+"""
+    fh = open(os.path.join(path, 'gitgate-run.py'), 'w')
+    fh.write(daemon)
+    fh.close()
+
+def write_testserver(data);
+    path = data['path']
+    testserver = """#!/usr/bin/env python2
+#!/usr/bin/env python
+import sys
+import ggconf
+from gitgate.webapp import app
+
+if __name__ == "__main__":
+    app.debug = True
+    app.secret_key = ggconf.SECRET_KEY
+    app.config['GG_DATABASE'] = ggconf.DATABASE
+    app.run(host='0.0.0.0')
+"""
+    fh = open(os.path.join(path, 'testserver.py'), 'w')
+    fh.write(testserver)
+    fh.close()
+
+def write_config(data):
+    path = data['path']
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    content = """
+# Full path to Sqlite3 database file
+DATABASE = '''%(database)s'''
+# Secret key - keep this super secret
+SECRET_KEY = '''%(secret_key)s'''
+"""%(data)
+    fh = open(os.path.join(path, 'ggconf.py'), 'w')
+    fh.write(content)
+    fh.close()
+
+def create_site(defaults=False):
+    path = os.getcwd()
+    database = None
+    secret_key = gen_random_string(40)
+    admin_user = 'Admin'
+    admin_pass = 'password'
+    admin_email = 'root@localhost'
+
+    if not defaults:
+        path = raw_input("Path [%s] "%(path)) or path
+        database = raw_input("Database location [%s] "%(os.path.join(path, 'global.db'))) \
+            or os.path.join(path, 'global.db')
+        secret_key = raw_input("Secret key [%s] "%(secret_key)) or secret_key
+        admin_user = raw_input("Admin user name [%s] "%(admin_user)) or admin_user
+        admin_email = raw_input("Admin email [%s] "%(admin_email)) or admin_email
+        admin_pass = raw_input("Admin password [%s] "%(admin_pass)) or admin_pass
+ 
+    # We need to write the config first
+    # as a hack to PeeWee's weird database
+    # configuration requirements
+    write_config(locals()) 
+
+    sys.path.insert(0, path)
+    import gitgate.models as md
+    md.create_tables()
+    md.populate_data()
+    admin_user = md.User.create(name=admin_user, 
+        password=hashlib.sha1(admin_pass).hexdigest(),
+        email=admin_email, is_admin=True)
+
+    write_daemon(locals())
+    write_testserver(locals())    
+
+def create_user():
+    import ggconf
+    import gitgate.models as md
+    is_admin = False
+    
+    name = raw_input('New user name: ')
+    if not name:
+        print("You must specify a name")
+        return
+    email = raw_input('New user email: ')
+    if len(email) < 6:
+        print("Invalid email address")
+        return
+    password = raw_input('New user password (they can change this later): ')
+    if len(password) < 6:
+        print("Passwords should be at least 6 characters")
+        return
+    admin = raw_input('Is this user an admin? [y/N] ')
+    if admin.lower() in ['y','yes']:
+        is_admin = True
+    new_user = md.User.create(name=name, email=email, is_admin=is_admin, 
+        password=hashlib.sha1(password).hexdigest())
+    print("New user created")
+
+if __name__ == "__main__":
+    create_site()

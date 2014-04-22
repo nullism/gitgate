@@ -4,12 +4,13 @@ import time
 import logging
 import sys
 
-
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 on_commit = None
 on_merge = None
+
+running = False
 
 def check_for_commits(project):
     sha1s = project.git_control.get_sha1_diffs()
@@ -61,11 +62,17 @@ def handle_approved(project):
         commit.save()
 
 def start():
-    projects = dbm.Project.select()
-    for project in projects:
-        project.git_control.update_all()
-        check_for_commits(project)
-        handle_approved(project)
+    running = True
+    while running:
+        projects = dbm.Project.select()
+        for project in projects:
+            project.git_control.update_all()
+            check_for_commits(project)
+            handle_approved(project)
+        time.sleep(10)
+
+def stop():
+    running = False
 
 if __name__ == "__main__":
     start()

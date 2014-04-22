@@ -7,7 +7,10 @@
 <p>Project path: <code>{{p.path}}</code></p>
 <p>Development clone url: <code>{{p.devel_clone_url}}</code></p>
 <p>Stable clone url: <code>{{p.stable_clone_url}}</code></p>
-<a class="btn btn-primary" href="{{url_for('commits', pid=p.id)}}">View Commits</a>
+<a class="btn btn-primary" href="{{url_for('commits', pid=p.id)}}?status_filter=committed">View Commits</a>
+{% if user.is_admin %}
+<a class="btn btn-info" href="{{url_for('project_roles', pid=p.id)}}">Roles</a>
+{% endif %}
 </div>
 {% endfor %}
 {% endblock %}
