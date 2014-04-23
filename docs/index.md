@@ -4,18 +4,20 @@
 
 ![Flow Chart](http://gitgate.nullism.com/uploads/gitgate-flow-basic.png)
 
-## What is GitGate? 
+## Frequently Asked Questions
+
+### What is GitGate? 
 
 GitGate is a developer-friendly dual-repository code-review system for gatekeeping changes.
 
-## How does GitGate work?
+### How does GitGate work?
 
 GitGate uses two repositories: *development* and *stable*. Developers commit to the *development* 
 repository just like they normally would. Code from development is mirrored into *stable*
 by checking out the commit in *development* and copying it to *stable*, and committing with `-C <commit sha1>` 
 to duplicate the Author details. 
 
-## What does repo access look like? 
+### What does repo access look like? 
 
     development/
         developer1 rw
