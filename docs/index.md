@@ -24,3 +24,28 @@ to duplicate the Author details.
     stable/
         gitgate_user rw
         build_user rw (ie: Jenkins)
+
+# Getting Started
+
+## Install GitGate
+
+    $ sudo pip install gitgate
+
+This will install GitGate and its requirements from PyPI. GitGate
+requires Flask >= 0.9, and PeeWee > 2. 
+
+## Setup Repositories
+
+Assuming you have a current development repository called `swag` located
+on GitHub:
+
+    :::bash
+    # Clone your existing repository
+    $ git clone --bare https://github.com/yolo/swag.git tmp-swag.git
+    $ cd tmp-swag.git
+    # Create a new repository, called swag-stable
+    $ git push --mirror https://github.com/yolo/swag-stable.git
+    $ cd ../
+    $ rm -rf tmp-swag.git
+ 
+
