@@ -1,1 +1,5 @@
 site_name: GitGate
+pages:
+- [index.md, Home]
+- [license.md, License]
+- [setup.md, Setup]
