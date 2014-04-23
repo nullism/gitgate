@@ -31,14 +31,16 @@ to duplicate the Author details.
 
 # Getting Started
 
-## Install GitGate
+## Initial Setup
+
+### Install GitGate from PyPI
 
     $ sudo pip install gitgate
 
 This will install GitGate and its requirements from PyPI. GitGate
 requires Flask >= 0.9, and PeeWee > 2. 
 
-## Setup Repositories
+### Setup Repositories
 
 Assuming you have a current development repository called `swag` located
 on GitHub:
@@ -51,7 +53,7 @@ on GitHub:
     $ cd ../
     $ rm -rf tmp-swag.git
  
-## Create a Site
+### Create a Site
 
     $ cd ~/mysites
     $ gitgate create-site
@@ -60,7 +62,7 @@ on GitHub:
     ...
     Site created!
 
-## Create a Project
+### Create a Project
 
     $ cd ~/mysites/GitGate
     $ gitgate create-project
@@ -71,6 +73,32 @@ on GitHub:
     ... 
     Project created!
 
+### Start the Daemon
 
+    $ cd ~/mysites/GitGate
+    $ ./daemon.py &
+
+### Clone the Development Repository
+
+This is the repository your developers work against.
+
+    $ cd ~/github
+    $ git clone https://github.com/yolo/swag.git
+
+## Committing
+
+### Making Changes
+
+Using the example from Initial Setup.
+
+    $ cd ~/github/swag
+    $ echo "Here's a new file" > newfile.txt
+    $ git commit newfile.txt -m "Added a new file"
+    $ git push origin master
+
+### Approve the change in GitGate
+
+Navigate to `yourhost:5000` and login using the admin credentials
+created in the Project Creation step.
 
 
