@@ -28,7 +28,6 @@ class GitProject(object):
     def __init__(self, config):
         self.config = config
 
-
     @property
     def devel_path(self):
         return os.path.join(self.config.path, 'devel')

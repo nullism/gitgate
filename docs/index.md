@@ -56,7 +56,7 @@ on GitHub:
 ### Create a Site
 
     $ cd ~/mysites
-    $ gitgate create-site
+    $ gitgate site create
     Path [/home/yolo/mysites] /home/yolo/mysites/GitGate
     Database path [/home/yolo/mysites/GitGate/global.db]
     ...
@@ -65,7 +65,7 @@ on GitHub:
 ### Create a Project
 
     $ cd ~/mysites/GitGate
-    $ gitgate create-project
+    $ gitgate project create
     Project name: swag
     Project path [/home/yolo/mysites/GitGate/projects/swag]
     Development clone url: https://github.com/yolo/swag.git

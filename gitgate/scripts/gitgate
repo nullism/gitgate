@@ -102,7 +102,7 @@ def create_site(path=None, defaults=False):
 
     if os.path.exists(path):
         print("Site path already exists!")
-        sys.exit(1)
+        return False
     
     # We need to write the config first
     # as a hack to PeeWee's weird database
@@ -129,7 +129,7 @@ def delete_site(path=None, force=False):
 
     if not os.path.exists(os.path.join(path, 'ggconf.py')):
         print("Could not find site at %s"%(path))
-        sys.exit(1)
+        return False
 
     yn = raw_input('Are you sure you want to delete %s? [y/n] '%(path))
     if yn.lower() in ['y','yes']:
@@ -176,6 +176,7 @@ def create_user(email, defaults=False):
     new_user = md.User.create(name=name, email=email, is_admin=is_admin, 
         password=hashlib.sha1(password).hexdigest())
     print("New user created")
+    return True
 
 def delete_user(email, force=False):
 
@@ -188,7 +189,7 @@ def delete_user(email, force=False):
         user = md.User.get(email=email)
     except:
         print("Unable to locate user: %s"%(email))
-        sys.exit(1)
+        return False
 
     if not force:
         yn = raw_input("Are you sure you want to delete user: %s? [y/n] "%(user.name))
@@ -197,12 +198,78 @@ def delete_user(email, force=False):
 
     print("User deleted!")    
     user.delete_instance()
+    return True
     
+def create_project(path=None, name=None, devel_clone_url=None, stable_clone_url=None):
 
+    """ Creates a new project at <path> """
 
-def create_project():
-    pass
+    if not name:
+        name = raw_input("Project name: ")
+        if len(name) < 3:
+            print("Name must be at least 3 characters")
+            return False
 
+    if not path:
+        path = os.getcwd()
+
+    project_path = os.path.join(path, 'projects', name)
+    if os.path.exists(project_path):
+        print("Project already exists: %s"%(project_path))
+        return False
+    
+    if not devel_clone_url:
+        devel_clone_url = raw_input("Development clone url: ")
+        if len(devel_clone_url) < 5:
+            print("Invalid clone url")
+            return False
+
+    if not stable_clone_url:
+        stable_clone_url = raw_input("Stable clone url: ")
+        if len(stable_clone_url) < 5:
+            print("Invalid clone url")
+            return False
+
+    try:
+        prj1 = md.Project.get(path=project_path)
+        prj2 = md.Project.get(name=name)
+        print("Project already exists!")
+        return False
+    except:
+        pass
+
+    new_project = md.Project.create(path=path, 
+        name=name, devel_clone_url=devel_clone_url,
+        stable_clone_url=stable_clone_url)
+    new_project.git_control.create_stable_checkout()
+    new_project.get_control.create_devel_checkout()
+    print("Project created!")
+    return True
+
+def delete_project(path=None, name=None, force=False):
+    if not path:
+        path = os.getcwd()
+
+    project_path = os.path.join(path, 'projects', name)
+    if not os.path.exists(project_path):
+        print("Could not locate project at: %s"%(project_path))
+        return False
+
+    if not force:
+        yn = raw_input("Are you sure you want to delete project: %s [y/n] "%(name))
+        if yn.lower() not in ['y','yes']:
+            return False
+
+    try:
+        prj = md.Project.get(name=name, path=project_path)
+        prj.delete_instance()
+    except:
+        print("Could not find database entry for project: %s %s"%(name, path))
+        return False
+
+    shutil.rmtree(project_path)
+    print("Deleted project!")
+    return True
 
 if __name__ == "__main__":
 
@@ -226,6 +293,13 @@ if __name__ == "__main__":
     p_user.add_argument('-f', '--force', action="store_true", 
         help="do not prompt for input where possible")
 
+    p_project = subparsers.add_parser('project',
+        help='create and delete projects')
+    p_project.add_argument('project_command', choices=['create','delete'])
+    p_project.add_argument('project_name', help='project name, must be unique')
+    p_project.add_argument('-f', '--force', action="store_true", 
+        help="do not prompt for input where possible")
+
     args = parser.parse_args()
 
     sys.path.insert(0, args.site_path)
@@ -242,3 +316,8 @@ if __name__ == "__main__":
         elif args.user_command == "delete":
             delete_user(email=args.email, force=args.force)
    
+    elif args.command == "project":
+        if args.project_command == "create":
+            create_project(path=args.site_path, name=args.project_name)
+        elif args.project_command == "delete":
+            delete_project(path=args.site_path, name=args.project_name, force=args.force)
