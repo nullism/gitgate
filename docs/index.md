@@ -78,6 +78,13 @@ on GitHub:
     $ cd ~/mysites/GitGate
     $ ./daemon.py &
 
+### Start the Test Server
+
+    $ cd ~/mysites/GitGate
+    $ ./testserver.py
+    Serving on localhost:5000
+    ...
+
 ### Clone the Development Repository
 
 This is the repository your developers work against.
@@ -96,7 +103,7 @@ Using the example from Initial Setup.
     $ git commit newfile.txt -m "Added a new file"
     $ git push origin master
 
-### Approve the change in GitGate
+### Reviewing and Approving Changes
 
 Navigate to `yourhost:5000` and login using the admin credentials
 created in the Project Creation step.
