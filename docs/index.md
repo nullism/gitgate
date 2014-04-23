@@ -1,5 +1,7 @@
 # GitGate Overview
 
+## Flow Chart
+
 ![Flow Chart](http://gitgate.nullism.com/uploads/gitgate-flow-basic.png)
 
 ## What is GitGate? 
@@ -39,7 +41,6 @@ requires Flask >= 0.9, and PeeWee > 2.
 Assuming you have a current development repository called `swag` located
 on GitHub:
 
-    :::bash
     # Clone your existing repository
     $ git clone --bare https://github.com/yolo/swag.git tmp-swag.git
     $ cd tmp-swag.git
@@ -48,4 +49,26 @@ on GitHub:
     $ cd ../
     $ rm -rf tmp-swag.git
  
+## Create a Site
+
+    $ cd ~/mysites
+    $ gitgate create-site
+    Path [/home/yolo/mysites] /home/yolo/mysites/GitGate
+    Database path [/home/yolo/mysites/GitGate/global.db]
+    ...
+    Site created!
+
+## Create a Project
+
+    $ cd ~/mysites/GitGate
+    $ gitgate create-project
+    Project name: swag
+    Project path [/home/yolo/mysites/GitGate/projects/swag]
+    Development clone url: https://github.com/yolo/swag.git
+    Stable clone url: https://github.com/yolo/swag-stable.git
+    ... 
+    Project created!
+
+
+
 
