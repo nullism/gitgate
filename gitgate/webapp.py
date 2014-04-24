@@ -277,9 +277,13 @@ def commit_file(pid, cid):
         commit = md.Commit.get(id=cid)
         commit_file = md.CommitFile.get(commit=commit, file_path=fpath)
     except:
-        abort(404)
-    diff = commit.project.git_control.get_file_diff(
-        commit.sha1, commit_file.file_path)
+        f.abort(404)
+    full = f.request.args.get('full', False)
+    
+    #diff = commit.project.git_control.get_file_diff(
+    #    commit.sha1, commit_file.file_path)
+    diff = commit.project.git_control.get_stable_diff(
+        commit.sha1, commit_file.file_path, full_diff=full)
     diff = diff.replace('<','&lt;')
     diff = diff.replace('>','&gt;')
     add_re = re.compile(r'^(\+.*?)$', flags=re.M)
@@ -287,7 +291,7 @@ def commit_file(pid, cid):
     diff = add_re.sub(r'<span class="code-line-added">\1</span>', diff)
     diff = rm_re.sub(r'<span class="code-line-removed">\1</span>', diff)
     return f.render_template('commit_file_diff.html', 
-        commit_file=commit_file, diff=diff, commit=commit)
+        commit_file=commit_file, diff=diff, commit=commit, full=full)
 
 @app.route('/project/<int:pid>/commits')
 @requires_user()

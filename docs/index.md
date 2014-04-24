@@ -108,4 +108,22 @@ Using the example from Initial Setup.
 Navigate to `yourhost:5000` and login using the admin credentials
 created in the Project Creation step.
 
+### Updating Changes
+
+Let's say commit `cbea1644d86b03d63e98f67a97d102ae7825ab21` which contained
+the files: `header.html`, `specialcode.js`, and `server.py` was **rejected**
+because of broken code in `server.py`.
+
+After fixing server.py in your development checkout, simply commit like so:
+
+    $ git add server.py
+    $ git commit -m "clone:cbea1644d86b03d63e98f67a97d102ae7825ab21"
+    $ git push origin master
+
+The `clone:<sha1>` command simply creates a brand new commit in GitGate
+by cloning the older commit. The code reviewers will see a new ticked with 
+the same message as the older ticket, but when they test it will work.
+
+This process is generally considered much easier than using `Change IDs`.
+
 

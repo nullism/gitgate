@@ -25,5 +25,5 @@ setup(name='gitgate',
     url = 'http://gitgate.nullism.com',
     install_requires = ['peewee>=2.0', 'flask>=0.9', 'argparse>=1'],
     license = 'MIT',
-    provides = 'gitgate'
+    provides = ['gitgate']
 )

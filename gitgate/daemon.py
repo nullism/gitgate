@@ -3,14 +3,45 @@ import models as dbm
 import time
 import logging
 import sys
+import re
+import datetime
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 on_commit = None
 on_merge = None
-
 running = False
+
+
+
+def clone_commit(new_sha1, old_sha1, file_changes, details):
+
+    """ Clones a commit and its files """
+
+    try:
+        old_commit = dbm.Commit.get(sha1=old_sha1)
+    except:
+        return False
+
+    new_date = details.get('author_date', datetime.datetime.now)
+
+    commit = old_commit.clone(new_sha1=new_sha1, 
+        new_author_date=new_date, clone_files=True)
+    
+    file_paths = [f[1] for f in file_changes]
+
+    for old_cf in commit.files:
+        if old_cf.file_path in file_paths:        
+            old_cf.delete_instance()
+
+    for status, fpath in file_changes:
+        dbm.CommitFile.create(
+            commit=commit,
+            change_type=status,
+            file_path=fpath)
+
+    return commit
 
 def check_for_commits(project):
     sha1s = project.git_control.get_sha1_diffs()
@@ -28,14 +59,30 @@ def check_for_commits(project):
             logger.info('No file changes')
             continue
 
-        details = project.git_control.get_commit_details(sha1)        
-        commit = dbm.Commit.create(sha1=sha1, project=project, branch='master',
-            author_date=details['author_date'], author_name=details['author_name'],
-            author_email=details['author_email'], status='committed',
-            message=details['message'])
+        details = project.git_control.get_commit_details(sha1)
+        message = details['message']
+        commit = None
+
+        ### Check for special handling
+
+        # Check for "clone" 
+        inc_match = re.search(r'clone:([a-zA-Z0-9]{20,45})', message)
+        if inc_match:
+            old_sha1 = inc_match.group(1)
+            commit = clone_commit(old_sha1=old_sha1, new_sha1=sha1,
+                file_changes=file_changes, details=details)
         
-        for change in file_changes:
-            cf = dbm.CommitFile.create(file_path=change[1], change_type=change[0], commit=commit)
+        
+        # Create the commit and its files
+        if not commit:    
+            commit = dbm.Commit.create(sha1=sha1, project=project, branch='master',
+                author_date=details['author_date'], author_name=details['author_name'],
+                author_email=details['author_email'], status='committed',
+                message=details['message'])
+        
+            for change in file_changes:
+                cf = dbm.CommitFile.create(file_path=change[1], change_type=change[0], commit=commit)
+
         if on_commit:
             on_commit(commit)
     

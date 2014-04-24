@@ -6,20 +6,27 @@ import shutil
 import dateutil.parser
 import re
 
+def command(cmds, cwd=None, minstatus=0):
+    if not cwd:
+        cwd = os.getcwd()
+    p = subprocess.Popen(cmds,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=cwd)
+    stdout, stderr = p.communicate()
+    status = p.returncode
+    if status > minstatus:
+        raise Exception('Error executing %s, error: %s'%(' '.join(cmds), stderr))
+    return stdout
+
 def git_command(cmd, cwd=None, args=[]):
 
     if not cwd:
         cwd = os.getcwd()
     cmds = ['/usr/bin/git',cmd] + args
-    p = subprocess.Popen(cmds, 
-        stdout=subprocess.PIPE, 
-        stderr=subprocess.PIPE,
-        cwd=cwd)
-    stdout, stderr = p.communicate()
-    status = p.returncode
-    if status != 0:
-        raise Exception('Error executing "git %s %s", error: %s'%(cmd, ' '.join(cmds), stderr))
+    stdout = command(cmds, cwd=cwd)
     return stdout
+
 
 class GitProject(object):   
 
@@ -56,6 +63,7 @@ class GitProject(object):
         git_command('remote', cwd=self.stable_path,
             args=['add', '-f', 'devel', self.config.devel_clone_url])
         return True
+
 
     def merge_commit(self, sha1, branch='master'):
 
@@ -107,11 +115,31 @@ class GitProject(object):
 
         git_command('fetch', cwd=self.stable_path, args=['--all'])
 
-        output = git_command('cherry', cwd=self.stable_path,
-            args=[branch, 'remotes/devel/%s'%(branch)])
+        args = [branch, 'remotes/devel/%s'%(branch)]
+
+        if self.config.last_merge_sha1:
+            args += [self.config.last_merge_sha1]
+
+        output = git_command('cherry', cwd=self.stable_path, args=args)
         shas = output.split('\n')
         diffs = [sha.split(' ')[-1] for sha in shas if '+' in sha]
         return diffs
+
+    def get_stable_diff(self, sha1, fpath, branch='master', full_diff=True):
+
+        unchanged_line_format = ''
+        if full_diff:
+            unchanged_line_format = ' %.5dn: %L'
+        git_command('checkout', cwd=self.devel_path, args=[sha1])
+
+        cmds = ['/usr/bin/diff', '-N',
+            '--unchanged-line-format=%s'%(unchanged_line_format),
+            '--old-line-format=-%.5dn: %L',
+            '--new-line-format=+%.5dn: %L',
+            os.path.join(self.stable_path, fpath),
+            os.path.join(self.devel_path, fpath)
+            ]
+        return command(cmds, cwd=self.devel_path, minstatus=1)
 
     def get_file_diff(self, sha1, fpath, branch='master'):
 

@@ -1,14 +1,22 @@
 {% extends 'base.html' %}
 {% block title %} Git Diff {% endblock %}
 {% block content %}
+<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
 <div>
-    <h1>File Diff</h1>
+    <h1>File Diff: <code>{{commit_file.file_path}}</code></h1>
     <h3>
         <a href="{{url_for('commit', pid=commit.project.id, cid=commit.id)}}">back to commit</a>
     </h3>
-    <p><b>{{commit_file.change_type}}</b> {{commit_file.file_path}}</p>
+    <p>Showing only differences between <code>development:{{commit.sha1}}/{{commit_file.file_path}}</code> and <code>stable:HEAD/{{commit_file.file_path}}</code></p>
+    <p><b>{{commit_file.change_type}}</b> {{commit_file.file_path}}
+    {% if not full %}
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;full=true">show full diff</a>
+    {% else %}
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}">show short diff</a>
+    {% endif %}
+    </p>
 </div>
-<pre>
+<pre class="prettyprint">
 {{diff|safe}}
 </pre>
 {% endblock %}

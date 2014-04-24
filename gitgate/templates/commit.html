@@ -90,7 +90,7 @@
 <div>
 <h3>Comments</h3>
 {% for l in commit.logs %}
-<p>At <span class="text-muted">{{l.created}}</span> {% if l.user %}<b>{{l.user.name}}</b> said:{% endif %}</p>
+<p>At <span class="text-muted">{{l.created}}</span> {% if l.user %}<b>{{l.user.name}}</b> said:{% else %}System message:{% endif %}</p>
     <blockquote>{{l.message}}</blockquote>
 {% endfor %}
 <div class="well">

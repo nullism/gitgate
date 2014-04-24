@@ -114,6 +114,41 @@ class Commit(DBModel):
                     _merge = False
                     break
         return _merge
+
+    def clone(self, new_sha1, new_author_date=None, new_status='committed', 
+            clone_files=True):
+        
+        """ Clone a commit and its files """
+
+        if not new_author_date:
+            new_author_date = datetime.datetime.now
+
+        new_commit = Commit.create(
+            sha1=new_sha1,
+            status=new_status,
+            author_date=new_author_date,
+            author_name=self.author_name,
+            author_email=self.author_email,
+            branch=self.branch,
+            message=self.message,
+            project=self.project)
+
+        if clone_files:
+            # Copy the files to the new commit
+            for cf in self.files:
+                new_cf = CommitFile.create(
+                    commit=new_commit, 
+                    file_path=cf.file_path,
+                    change_type=cf.change_type)
+
+        # Add a log message
+        log = CommitLog.create(
+            commit=new_commit,
+            message='Cloned from %s'%(self.sha1)
+        ) 
+        self.status = 'outdated'
+        self.save()
+        return new_commit
     
 class CommitFile(DBModel):
     
@@ -127,6 +162,6 @@ class CommitFile(DBModel):
 class CommitLog(DBModel):
     
     commit = ForeignKeyField(Commit, related_name='logs')
-    user = ForeignKeyField(User)
+    user = ForeignKeyField(User, null=True, default=None)
     created = DateTimeField(default=datetime.datetime.now)
     message = TextField()    
