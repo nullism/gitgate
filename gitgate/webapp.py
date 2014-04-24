@@ -65,6 +65,10 @@ def get_project():
         return md.Project.get(id=m.groups(0))
     return None
 
+def url_for(fn, **kwargs):
+    path = app.config.get('URL_PREFIX','') + f.url_for(fn, **kwargs)
+    return path
+
 ### ----------------------------------------------------------------------------
 ### Routes
 ### ----------------------------------------------------------------------------
@@ -72,8 +76,13 @@ def get_project():
 def inject_user():
     return dict(user=get_user())
 
+@app.context_processor
+def injext_url_for():
+    return dict(url_for=url_for)
+
 @app.before_request
 def before_request():
+    print url_for('login')
     f.g.db = md.database
     f.g.db.connect()
 
@@ -84,7 +93,7 @@ def after_request(response):
 
 @app.route('/')
 def index():
-    return f.redirect(f.url_for('projects'))
+    return f.redirect(url_for('projects'))
 
 @app.route('/account', methods=['GET','POST'])
 @requires_user()
@@ -104,45 +113,45 @@ def account():
         pw2 = f.request.form.get('password2','').strip()
         if len(pw1) < 6:
             add_error('Passwords must be at least 6 characters')
-            return f.redirect(f.url_for('account'))
+            return f.redirect(url_for('account'))
         if pw1 != pw2:
             add_error('Passwords do not match')
-            return f.redirect(f.url_for('account'))
+            return f.redirect(url_for('account'))
         user.password = hashlib.sha1(pw1).hexdigest()
         user.save()
         add_message('Passwords updated')
-        return f.redirect(f.url_for('account'))
+        return f.redirect(url_for('account'))
 
     if action == 'update_email':
         new_email = f.request.form.get('email','').strip()
         if not new_email or len(new_email) < 6:
             add_error('Invalid email address specified')
-            return f.redirect(f.url_for('account'))
+            return f.redirect(url_for('account'))
    
         try:
             # PeeWee weirdness
             ou = md.User.get(email=new_email)
             add_error('That email address is already in use')
-            return f.redirect(f.url_for('account'))
+            return f.redirect(url_for('account'))
         except:
             pass
         user.email = new_email
         user.save()
         add_message('Email address updated')
-        return f.redirect(f.url_for('account'))
+        return f.redirect(url_for('account'))
 
     if action == 'update_name':
         new_name = f.request.form.get('name','').strip()
         if len(new_name) < 3:
             add_error('Names must be at least 3 characters')
-            return f.redirect(f.url_for('account'))
+            return f.redirect(url_for('account'))
         user.name = new_name
         user.save()
         add_message('Name updated')
-        return f.redirect(f.url_for('account'))
+        return f.redirect(url_for('account'))
 
     add_error('Unknown action specified')
-    return f.redirect(f.url_for('account'))
+    return f.redirect(url_for('account'))
 
 @app.route('/users', methods=['GET','POST'])
 @requires_admin()
@@ -163,10 +172,10 @@ def login():
         user = md.User.get(email=email, password=pwhash)
     except:
         add_error('Invalid email or password')
-        return f.redirect(f.url_for('login'))
+        return f.redirect(url_for('login'))
     add_message('Welcome back %s'%(user.name))
     f.session['user_id'] = user.id
-    return f.redirect(f.url_for('index'))
+    return f.redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
@@ -177,7 +186,7 @@ def logout():
         f.session['user_id'] = None
         f.g.user = None
         add_message('You have been logged out')
-    return f.redirect(f.url_for('login'))
+    return f.redirect(url_for('login'))
 
 @app.route('/project/<int:pid>/commit/<int:cid>')
 @requires_user()
@@ -208,7 +217,7 @@ def commit_action(pid, cid, action):
         f.abort(404)
 
     def redirect_self():
-        return f.redirect(f.url_for('commit', pid=pid, cid=cid))
+        return f.redirect(url_for('commit', pid=pid, cid=cid))
 
     if action == 'approve':
         if commit.status not in ['reviewed','committed']:
@@ -273,8 +282,10 @@ def commit_file(pid, cid):
         commit.sha1, commit_file.file_path)
     diff = diff.replace('<','&lt;')
     diff = diff.replace('>','&gt;')
-    diff = re.sub(r'^(\+.*?)$',r'<span class="code-line-added">\1</span>', diff, flags=re.M) 
-    diff = re.sub(r'^(\-.*?)$',r'<span class="code-line-removed">\1</span>', diff, flags=re.M) 
+    add_re = re.compile(r'^(\+.*?)$', flags=re.M)
+    rm_re = re.compile(r'^(\-.*?)$', flags=re.M)
+    diff = add_re.sub(r'<span class="code-line-added">\1</span>', diff)
+    diff = rm_re.sub(r'<span class="code-line-removed">\1</span>', diff)
     return f.render_template('commit_file_diff.html', 
         commit_file=commit_file, diff=diff, commit=commit)
 
@@ -286,17 +297,24 @@ def commits(pid):
     except:
         f.abort(404)
 
+    page = f.request.args.get('page',1)
+    limit = f.request.args.get('limit',100)
+
     status_filter = f.request.args.get('status_filter','').strip()
     # Peewee queries are extra ugly - not sure why I chose it.
     statuses = [s[0] for s in md.Commit.STATUSES]
     if status_filter:
         statuses = status_filter.split(',')
     
-    print "Statuses: ", statuses
+    #print "Statuses: ", statuses
     commits = md.Commit.select().where(
         (md.Commit.project == project) &
         (md.Commit.status << statuses)
-    )
+    ).order_by(md.Commit.author_date.desc()).paginate(int(page), int(limit))
+    print "Page = %s, limit = %s, count = %s"%(page, limit, commits.count())
+    for c in commits:
+        print "\t", c.id
+    
     return f.render_template('commits.html', project=project, 
         statuses=statuses, commits=commits)
 
@@ -335,23 +353,23 @@ def project_role_add(pid):
     user_email = f.request.form.get('user_email','').strip()
     if not user_email or not role_name:
         add_error('You must specify a user email address and role')
-        return f.redirect(f.url_for('project_roles', pid=project.id))
+        return f.redirect(url_for('project_roles', pid=project.id))
         
     try:
         user = md.User.get(email=user_email)
         role = md.Role.get(name=role_name)
     except:
         add_error('User or role not found')
-        return f.redirect(f.url_for('project_roles', pid=project.id))
+        return f.redirect(url_for('project_roles', pid=project.id))
     try:
         ur = md.ProjectRole.get(project=project, user=user, role=role)
         add_error('User already exists for that role (%s)'%(role.name))
-        return f.redirect(f.url_for('project_roles', pid=project.id))
+        return f.redirect(url_for('project_roles', pid=project.id))
     except:
         pass    
     pr = md.ProjectRole.create(user=user, role=role, project=project)
     add_message('User role created!')
-    return f.redirect(f.url_for('project_roles', pid=project.id))
+    return f.redirect(url_for('project_roles', pid=project.id))
 
 @app.route('/project/<pid>/role/delete', methods=['POST'])    
 def project_role_delete(pid):
@@ -370,7 +388,7 @@ def project_role_delete(pid):
     
     pr.delete_instance()
     add_message('User removed from role: %s'%(role.name))
-    return f.redirect(f.url_for('project_roles', pid=project.id))
+    return f.redirect(url_for('project_roles', pid=project.id))
 
 @app.route('/projects')
 def projects():

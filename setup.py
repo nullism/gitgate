@@ -20,10 +20,10 @@ setup(name='gitgate',
     author_email = 'webgovernor@gmail.com',
     packages = ['gitgate'],
     package_dir={'gitgate':'gitgate'},
-    #package_data={'gitgate':['examples/*.py']},
+    package_data={'gitgate':['templates/*', 'static/bootstrap3/*/*', 'static/jquery/*.js']},
     scripts=['gitgate/scripts/gitgate'],
     url = 'http://gitgate.nullism.com',
-    install_requires = ['peewee>=2.0', 'flask>=0.9'],
+    install_requires = ['peewee>=2.0', 'flask>=0.9', 'argparse>=1'],
     license = 'MIT',
     provides = 'gitgate'
 )

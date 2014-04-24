@@ -90,7 +90,7 @@ class GitProject(object):
 
     def get_commit_details(self, sha1):
         output = git_command('show', cwd=self.devel_path,
-            args=['--format=%H|xsplit|%an|xsplit|%ae|xsplit|%ai|xsplit|%B|xsplit|', 
+            args=['--format=%H|xsplit|%an|xsplit|%ae|xsplit|%ai|xsplit|%s|xsplit|', 
             sha1])
         parts = output.split('|xsplit|')
         data = { 

@@ -55,6 +55,7 @@ from gitgate.webapp import app
 if __name__ == "__main__":
     app.debug = True
     app.secret_key = ggconf.SECRET_KEY
+    app.config['URL_PREFIX'] = ggconf.URL_PREFIX
     app.config['GG_DATABASE'] = ggconf.DATABASE
     app.run(host='0.0.0.0')
 """
@@ -72,6 +73,8 @@ def write_config(data):
 DATABASE = '''%(database)s'''
 # Secret key - keep this super secret
 SECRET_KEY = '''%(secret_key)s'''
+# Url prefix, empty string for none
+URL_PREFIX = '''%(url_prefix)s'''
 """%(data)
     fh = open(os.path.join(path, 'ggconf.py'), 'w')
     fh.write(content)
@@ -86,6 +89,7 @@ def create_site(path=None, defaults=False):
 
     database = os.path.join(path, 'global.db')
     secret_key = gen_random_string(40)
+    url_prefix = ''
     admin_user = 'Admin'
     admin_pass = 'password'
     admin_email = 'root@localhost'
@@ -95,13 +99,16 @@ def create_site(path=None, defaults=False):
         database = raw_input("Database location [%s] "%(os.path.join(path, 'global.db'))) \
             or os.path.join(path, 'global.db')
         secret_key = raw_input("Secret key [%s] "%(secret_key)) or secret_key
+        url_prefix = raw_input("Url prefix [%s] "%(url_prefix)) or ''
+        if url_prefix.endswith('/'):
+            url_prefix = url_prefix[:-1]
         admin_user = raw_input("Admin user name [%s] "%(admin_user)) or admin_user
         admin_email = raw_input("Admin email [%s] "%(admin_email)) or admin_email
         admin_pass = raw_input("Admin password [%s] "%(admin_pass)) or admin_pass
  
 
-    if os.path.exists(path):
-        print("Site path already exists!")
+    if os.path.exists(path) and not os.listdir(path) == []:
+        print("Site path already exists and isn't empty!")
         return False
     
     # We need to write the config first
@@ -230,6 +237,9 @@ def create_project(path=None, name=None, devel_clone_url=None, stable_clone_url=
             print("Invalid clone url")
             return False
 
+    import ggconf
+    import gitgate.models as md
+
     try:
         prj1 = md.Project.get(path=project_path)
         prj2 = md.Project.get(name=name)
@@ -238,11 +248,12 @@ def create_project(path=None, name=None, devel_clone_url=None, stable_clone_url=
     except:
         pass
 
-    new_project = md.Project.create(path=path, 
+    os.makedirs(project_path)
+    new_project = md.Project.create(path=project_path, 
         name=name, devel_clone_url=devel_clone_url,
         stable_clone_url=stable_clone_url)
     new_project.git_control.create_stable_checkout()
-    new_project.get_control.create_devel_checkout()
+    new_project.git_control.create_devel_checkout()
     print("Project created!")
     return True
 
@@ -261,10 +272,10 @@ def delete_project(path=None, name=None, force=False):
             return False
 
     try:
-        prj = md.Project.get(name=name, path=project_path)
+        prj = md.Project.get(name=name)
         prj.delete_instance()
     except:
-        print("Could not find database entry for project: %s %s"%(name, path))
+        print("Could not find database entry for project: %s %s"%(name, project_path))
         return False
 
     shutil.rmtree(project_path)
