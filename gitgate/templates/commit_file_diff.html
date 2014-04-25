@@ -9,11 +9,14 @@
     </h3>
     <p>Showing only differences between <code>development:{{commit.sha1}}/{{commit_file.file_path}}</code> and <code>stable:HEAD/{{commit_file.file_path}}</code></p>
     <p><b>{{commit_file.change_type}}</b> {{commit_file.file_path}}
-    {% if not full %}
-        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;full=true">show full diff</a>
-    {% else %}
-        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}">show short diff</a>
-    {% endif %}
+        &nbsp; &nbsp;
+        <b>Showing {{context}} lines of context:</b>
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;context=0">None</a> |
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;context=1">1</a> |
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;context=10">10</a> |
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;context=25">25</a> |
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;context=100">100</a> |
+        <a href="{{ url_for('commit_file', pid=commit.project.id, cid=commit.id) }}?fpath={{                   commit_file.file_path|urlencode}}&amp;context=200">Max</a>
     </p>
 </div>
 <pre class="prettyprint">

@@ -5,6 +5,25 @@
     <link rel="stylesheet" href="{{url_for('static', filename='bootstrap3/css/bootstrap.min.css')}}" />
     <script src="{{url_for('static', filename='jquery/jquery.min.js')}}"></script>
 <style type="text/css">
+html {
+    position: relative;
+    min-height: 100%;
+}
+body { 
+    margin-bottom: 60px;
+}
+#footer {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 60px;
+    background-color: #f5f5f5;
+    z-index: 500;
+}
+#footer p { 
+    margin: 20px 0;
+}
 .code-line-added { 
     background-color: #cfc;
 }
@@ -51,7 +70,13 @@
 {% block content %}
 {% endblock %}
 </div>
-
+<div id="footer">
+    <div class="container">
+        <p class="text-muted">
+            <a href="http://gitgate.nullism.com" target="_blank">GitGate</a> version <b>{{version}}</b>
+        </p>
+    </div>
+</div>
 <script src="{{url_for('static', filename='bootstrap3/js/bootstrap.min.js')}}"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@ import models as md
 import re
 from functools import wraps
 import hashlib
+from gitgate import __version__
 
 app = f.Flask(__name__)
 
@@ -72,6 +73,10 @@ def url_for(fn, **kwargs):
 ### ----------------------------------------------------------------------------
 ### Routes
 ### ----------------------------------------------------------------------------
+@app.context_processor
+def inject_version():
+    return dict(version=__version__)
+
 @app.context_processor
 def inject_user():
     return dict(user=get_user())
@@ -278,20 +283,30 @@ def commit_file(pid, cid):
         commit_file = md.CommitFile.get(commit=commit, file_path=fpath)
     except:
         f.abort(404)
-    full = f.request.args.get('full', False)
-    
-    #diff = commit.project.git_control.get_file_diff(
-    #    commit.sha1, commit_file.file_path)
-    diff = commit.project.git_control.get_stable_diff(
-        commit.sha1, commit_file.file_path, full_diff=full)
-    diff = diff.replace('<','&lt;')
-    diff = diff.replace('>','&gt;')
-    add_re = re.compile(r'^(\+.*?)$', flags=re.M)
-    rm_re = re.compile(r'^(\-.*?)$', flags=re.M)
-    diff = add_re.sub(r'<span class="code-line-added">\1</span>', diff)
-    diff = rm_re.sub(r'<span class="code-line-removed">\1</span>', diff)
+    context = f.request.args.get('context',1)
+    try:
+        context = int(context)
+    except:
+        context = 1
+    if context > 200:
+        add_error('Warning: showing that much context can take a long time,'\
+            ' resetting to 200 (max)')
+        context = 200
+
+    diff = commit.project.git_control.get_unified_diff(
+        commit.sha1, commit_file.file_path, context=context)
+    if not diff:
+        diff = ("diff output: \"This commit's file changes "
+            "do not differ from stable\"")
+    else:
+        diff = diff.replace('<','&lt;')
+        diff = diff.replace('>','&gt;')
+        add_re = re.compile(r'^(\+.*?)$', flags=re.M)
+        rm_re = re.compile(r'^(\-.*?)$', flags=re.M)
+        diff = add_re.sub(r'<span class="code-line-added">\1</span>', diff)
+        diff = rm_re.sub(r'<span class="code-line-removed">\1</span>', diff)
     return f.render_template('commit_file_diff.html', 
-        commit_file=commit_file, diff=diff, commit=commit, full=full)
+        commit_file=commit_file, diff=diff, commit=commit, context=context)
 
 @app.route('/project/<int:pid>/commits')
 @requires_user()
@@ -302,7 +317,13 @@ def commits(pid):
         f.abort(404)
 
     page = f.request.args.get('page',1)
-    limit = f.request.args.get('limit',100)
+    limit = f.request.args.get('limit',50)
+    try:
+        page = int(page)
+        limit = int(limit)
+    except:
+        page = 1
+        limit = 50
 
     status_filter = f.request.args.get('status_filter','').strip()
     # Peewee queries are extra ugly - not sure why I chose it.
@@ -320,7 +341,7 @@ def commits(pid):
         print "\t", c.id
     
     return f.render_template('commits.html', project=project, 
-        statuses=statuses, commits=commits)
+        statuses=statuses, commits=commits, page=page, limit=limit)
 
 @app.route('/project/<pid>/roles')
 @requires_user()

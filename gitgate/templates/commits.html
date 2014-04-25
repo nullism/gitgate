@@ -1,30 +1,55 @@
 {% extends 'base.html' %}
 {% block title %}Commits{% endblock %}
 {% block content %}
+
+{% macro commit_link(ltext, lclass='', apage=None, alimit=None, astatus_filter=None) %}
+<a href="{{url_for('commits', pid=project.id)}}?limit={% if alimit %}{{alimit}}{% else %}{{limit}}{% endif %}&amp;page={% if apage %}{{apage}}{% else %}1{% endif %}&amp;status_filter={% if astatus_filter %}{{astatus_filter|join(',')}}{% else %}{{statuses|join(',')}}{%endif%}" class="{{lclass}}">{{ltext|safe}}</a>
+{% endmacro %}
+
 <h1>Commits for {{project.name}}</h1>
 <h3><a href="{{url_for('projects')}}">back to projects</a></h3>
 <div>
-    <a href="{{url_for('commits', pid=project.id)}}"
-        class="btn btn-primary">All</a>
-    <a href="{{url_for('commits', pid=project.id)}}?status_filter=committed"
-        class="btn btn-info">Committed</a>
-    <a href="{{url_for('commits', pid=project.id)}}?status_filter=reviewed"
-        class="btn btn-info">Reviewed</a>
-    <a href="{{url_for('commits', pid=project.id)}}?status_filter=approved"
-        class="btn btn-success">Approved</a>
-    <a href="{{url_for('commits', pid=project.id)}}?status_filter=merged"
-        class="btn btn-success">Merged</a>
-    <a href="{{url_for('commits', pid=project.id)}}?status_filter=rejected"
-        class="btn btn-danger">Rejected</a>
-    <a href="{{url_for('commits', pid=project.id)}}?status_filter=outdated"
-        class="btn btn-danger">Outdated</a>
+    {{commit_link("All", lclass='btn btn-primary',astatus_filter=[NA])}}
+    {{commit_link("Committed", lclass='btn btn-info',astatus_filter=['committed'])}}
+    {{commit_link("Reviewed", lclass='btn btn-info',astatus_filter=['reviewed'])}}
+    {{commit_link("Approved", lclass='btn btn-success',astatus_filter=['approved'])}}
+    {{commit_link("Merged", lclass='btn btn-success',astatus_filter=['merged'])}}
+    {{commit_link("Rejected", lclass='btn btn-danger',astatus_filter=['rejected'])}}
+    {{commit_link("Outdated", lclass='btn btn-danger',astatus_filter=['outdated'])}}
 </div>
 {% if statuses %}
-<h3>Showing commits listed as <i>{{statuses|join(', ')}}</i></h3>
+<h4>Showing commits listed as <i>{{statuses|join(', ')}}</i></h4>
 {% else %}
 <h3>Showing all commits</h3>
 {% endif %}
-{% if commits.count() > 0 %}
+
+<div>
+<p class="pull-left">
+{% if page > 1 %}
+{{ commit_link('<span class="glyphicon glyphicon-chevron-left"></span>previous', apage=page-1) }}
+{% endif %}
+{% if commits.wrapped_count(False) >= limit %}
+{{ commit_link('next<span class="glyphicon glyphicon-chevron-right"></span>', apage=page+1) }}
+{% endif %}
+</p>
+
+<p class="pull-right">
+Showing {{limit}} results per page:
+{% if limit != 10 %}
+{{ commit_link('10', alimit=10) }} |
+{% endif %}
+{% if limit != 25 %}
+{{ commit_link('25', alimit=25) }} |
+{% endif %}
+{% if limit != 50 %}
+{{ commit_link('50', alimit=50) }} 
+{% endif %}
+<p>
+
+<p style="clear: both;"></p>
+</div>
+
+{% if commits.wrapped_count(False) > 0 %}
 <table class="table table-hover table-striped">
 <thead>
 <tr>
@@ -37,16 +62,6 @@
 </thead>
 <tbody> 
 {% for c in commits %}
-<!-- <div class="row">
-    <div class="col-sm-2">{{c.author_date}}</div>
-    <div class="col-sm-2">{{c.author_name}}</div>
-    <div class="col-sm-4">{{c.message}}</div>
-    <div class="col-sm-2">{{c.status}}</div>
-    <div class="col-sm-2">
-        <a href="{{url_for('commit', pid=project.id, cid=c.id)}}">View</a>
-    </div>
-</div> -->
-
 <tr>
     <td><span class="text-muted">
       {{c.author_date}}

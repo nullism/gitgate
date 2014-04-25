@@ -5,6 +5,7 @@ import json
 import shutil 
 import dateutil.parser
 import re
+import difflib
 
 def command(cmds, cwd=None, minstatus=0):
     if not cwd:
@@ -26,6 +27,60 @@ def git_command(cmd, cwd=None, args=[]):
     cmds = ['/usr/bin/git',cmd] + args
     stdout = command(cmds, cwd=cwd)
     return stdout
+
+def unified_diff(to_file_path, from_file_path, context=1):
+
+    """ Returns a list of differences between two files based
+    on some context. This is probably over-complicated. """
+
+    pat_diff = re.compile(r'@@ (.[0-9]+\,[0-9]+) (.[0-9]+,[0-9]+) @@')
+
+    from_lines = []
+    if os.path.exists(from_file_path):
+        from_fh = open(from_file_path,'r')
+        from_lines = from_fh.readlines()
+        from_fh.close()
+
+    to_lines = []
+    if os.path.exists(to_file_path):
+        to_fh = open(to_file_path,'r')
+        to_lines = to_fh.readlines()
+        to_fh.close()
+
+    diff_lines = [] 
+
+    lines = difflib.unified_diff(to_lines, from_lines, n=context)
+    for line in lines:
+        if line.startswith('--') or line.startswith('++'):
+            continue
+
+        m = pat_diff.match(line)
+        if m:
+            left = m.group(1)
+            right = m.group(2)
+            lstart = left.split(',')[0][1:]
+            rstart = right.split(',')[0][1:]
+            diff_lines.append("@@ %s %s @@\n"%(left, right))
+            to_lnum = int(lstart)
+            from_lnum = int(rstart)
+            continue
+
+        code = line[0]
+
+        lnum = from_lnum
+        if code == '-':
+            lnum = to_lnum
+        diff_lines.append("%s%.4d: %s"%(code, lnum, line[1:]))
+
+        if code == '-':
+            to_lnum += 1
+        elif code == '+':
+            from_lnum += 1
+        else:
+            to_lnum += 1
+            from_lnum += 1
+
+    return diff_lines
 
 
 class GitProject(object):   
@@ -124,6 +179,17 @@ class GitProject(object):
         shas = output.split('\n')
         diffs = [sha.split(' ')[-1] for sha in shas if '+' in sha]
         return diffs
+
+    def get_unified_diff(self, sha1, fpath, branch='master', context=5):
+    
+        git_command('checkout', cwd=self.devel_path, args=[sha1])
+        git_command('checkout', cwd=self.stable_path, args=[branch])
+        git_command('pull', cwd=self.stable_path, args=['origin',branch])
+
+        to_fpath = os.path.join(self.stable_path, fpath)
+        from_fpath = os.path.join(self.devel_path, fpath)
+        return ''.join(unified_diff(to_fpath, from_fpath, context))
+
 
     def get_stable_diff(self, sha1, fpath, branch='master', full_diff=True):
 
