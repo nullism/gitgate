@@ -12,11 +12,10 @@ Contents:
    :maxdepth: 2
 
 
+Installation
+============
 
-Indices and tables
-==================
+    sudo pip install gitgate
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+GitGate requires Flask, Python SQLite3, Peewee ORM, and ArgParse. 
+These dependencies should automatically be resolved via PyPI. 
