@@ -137,9 +137,19 @@ After fixing server.py in your development checkout, simply commit like so:
     $ git push origin master
 
 The `clone:<sha1>` command simply creates a brand new commit in GitGate
-by cloning the older commit. The code reviewers will see a new ticked with 
-the same message as the older ticket, but when they test it will work.
+by cloning the older commit. The code reviewers will see a new commit in GitGate with 
+the same message as the older commit (but hopefully when they test it will work).
 
 This process is generally considered much easier than using `Change IDs`.
+
+Merging
+-------
+
+Changes are merged into the stable repository when the following criteria is met:
+
+* The commit has been *approved*
+* The commit is older than any other pending change that includes the same files.
+    * Pending changes are considered to be statuses of *committed*, *approved*, and *reviewed*.
+    * This prevents older files being merged ontop of newer files.
 
 
