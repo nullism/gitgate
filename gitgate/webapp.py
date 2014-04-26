@@ -87,7 +87,6 @@ def injext_url_for():
 
 @app.before_request
 def before_request():
-    print url_for('login')
     f.g.db = md.database
     f.g.db.connect()
 
@@ -276,6 +275,16 @@ def commit_action(pid, cid, action):
 @app.route('/project/<int:pid>/commit/<int:cid>/file')
 @requires_user()
 def commit_file(pid, cid):
+
+    """ Returns HTML information for a given commit and file.
+    This includes running a file diff 
+    
+    @param pid - The id of the project.
+    @param cid - The id of the commit.
+    GET param fpath - String of the relative path of the 
+        file to be diffed. This is safe.
+    """
+
     try:
         fpath = f.request.args.get('fpath')
         project = md.Project.get(id=pid)
@@ -311,6 +320,16 @@ def commit_file(pid, cid):
 @app.route('/project/<int:pid>/commits')
 @requires_user()
 def commits(pid):
+    
+    """ Returns the HTML view for commits 
+    accepts several filter arguments
+
+    GET param page - int: 1-based page number
+    GET param limit - int: The total number of commits to show
+    GET param status_filter - string: comma separated string of 
+        statuses to display. Empty defaults to all.
+    """
+
     try:
         project = md.Project.get(id=pid)
     except:
@@ -336,16 +355,16 @@ def commits(pid):
         (md.Commit.project == project) &
         (md.Commit.status << statuses)
     ).order_by(md.Commit.author_date.desc()).paginate(int(page), int(limit))
-    print "Page = %s, limit = %s, count = %s"%(page, limit, commits.count())
-    for c in commits:
-        print "\t", c.id
     
     return f.render_template('commits.html', project=project, 
         statuses=statuses, commits=commits, page=page, limit=limit)
 
 @app.route('/project/<pid>/roles')
 @requires_user()
-def project_roles(pid): 
+def project_roles(pid):
+
+    """ Returns the HTML view for projects and role mappings """
+ 
     try:
         project = md.Project.get(id=pid)
     except:
