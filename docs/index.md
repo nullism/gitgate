@@ -147,10 +147,10 @@ Merging
 
 Changes are merged into the stable repository when the following criteria is met:
 
-* The commit has been *approved*
-* The commit is older than any other pending change that includes the same files.
-    * Pending changes are considered to be statuses of *committed*, *approved*, and *reviewed*.
-    * This prevents older files being merged ontop of newer files.
+1. The commit has been *approved*
+2. The commit is older than any other pending change that includes the same files.
+    1. Pending changes are considered to be statuses of *committed*, *approved*, and *reviewed*.
+    2. This prevents older files being merged ontop of newer files.
 
 GitGate changes merge in order.
 
@@ -161,12 +161,12 @@ the developer pushes to GitGate &mdash; it's just like using vanilla Git.
 
 However there is one scenario where things can get out of sync:
 
-+ A developer pushes a commit
-+ That commit is *rejected*
-+ A different developer pushes a commit to the same file.
-+ The second developer's commit is *approved* and *merged*.
-+ The rejected change is *unrejected*, *approved*, and *merged*.
-+ The files from the originally rejected change are now the latest in *stable*.
+1. A developer pushes a commit
+2. That commit is *rejected*
+3. A different developer pushes a commit to the same file.
+4. The second developer's commit is *approved* and *merged*.
+5. The rejected change is *unrejected*, *approved*, and *merged*.
+6. The files from the originally rejected change are now the latest in *stable*.
 
 
 
