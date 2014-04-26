@@ -1,13 +1,15 @@
 Title: Introduction
 
+GitGate Overview
+================
 
-# GitGate Overview
-
-## Flow Chart
+Flow Chart
+----------
 
 ![Flow Chart](http://gitgate.nullism.com/uploads/gitgate-flow-basic.png)
 
-## Frequently Asked Questions
+Frequently Asked Questions
+--------------------------
 
 ### What is GitGate? 
 
@@ -32,9 +34,20 @@ to duplicate the Author details.
         gitgate_user rw
         build_user rw (ie: Jenkins)
 
-# Getting Started
+### How does GitGate handle merges? 
 
-## Initial Setup
+GitGate *copies* code from a development repository to a stable repository. 
+Merge conflicts only arise when two commits that include the same file 
+are waiting to be "merged" into the stable repo, and in that case GitGate
+merges them in the proper order. Because developers use
+the development repository, merge conflicts are handled prior to getting
+into GitGate - removing the "code limbo" problems of tools like Gerrit.
+
+Getting Started
+===============
+
+Initial Setup
+-------------
 
 ### Install GitGate from PyPI
 
