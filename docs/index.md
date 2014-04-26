@@ -81,8 +81,7 @@ on GitHub:
 ### Create a Project
 
     $ cd ~/mysites/GitGate
-    $ gitgate project create
-    Project name: swag
+    $ gitgate project create swag
     Project path [/home/yolo/mysites/GitGate/projects/swag]
     Development clone url: https://github.com/yolo/swag.git
     Stable clone url: https://github.com/yolo/swag-stable.git
