@@ -2,4 +2,3 @@ site_name: GitGate
 pages:
 - index.md
 - license.md
-- setup.md
