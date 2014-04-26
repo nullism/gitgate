@@ -1,4 +1,6 @@
 site_name: GitGate
 pages:
-- index.md
-- license.md
+- [index.md, Home]
+- [comparison.md, Comparing GitGate]
+- [license.md, License]
+
