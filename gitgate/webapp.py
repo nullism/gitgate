@@ -17,7 +17,7 @@ def requires_admin():
         @wraps(fn)
         def wrapped(*args, **kwargs):
             user = get_user()
-            if not user.is_admin():
+            if not user.is_admin:
                 add_error("You're not authorized to do that")
                 f.abort(403)
             return fn(*args, **kwargs)
@@ -192,6 +192,50 @@ def logout():
         add_message('You have been logged out')
     return f.redirect(url_for('login'))
 
+@app.route('/project/<int:pid>/branches', methods=['GET','POST'])
+@requires_user()
+def project_branches(pid):
+
+
+    user = get_user()
+
+    try:
+        project = md.Project.get(id=pid)
+    except:
+        f.abort(404)
+
+    if f.request.method == 'GET':
+        return f.render_template('project_branches.html', project=project)
+
+    rm_branch = f.request.form.get('rm_branch')
+    add_branch = f.request.form.get('add_branch')
+
+    if not user.is_admin:
+        add_error('You are not authorized to modify branches')
+        return f.redirect(url_for('project_branches', pid=pid))
+
+    if rm_branch:
+        try:
+            pb = md.ProjectBranch.get(name=rm_branch, project=project)
+            add_message('Branch "%s" no longer tracked'%(pb.name))
+            pb.delete_instance()
+            return f.redirect(url_for('project_branches', pid=pid))
+        except:
+            f.abort(404)
+
+    if add_branch:
+        try:
+            pb = md.ProjectBranch.get(name=add_branch, project=project)
+            add_error('That branch is already tracked')
+            return f.redirect(url_for('project_branches', pid=pid)) 
+        except:
+            pass
+        pb = md.ProjectBranch.create(name=add_branch, project=project)
+        add_message('Now tracking branch "%s"'%(pb.name))
+
+    return f.redirect(url_for('project_branches', pid=pid))
+
+
 @app.route('/project/<int:pid>/commit/<int:cid>')
 @requires_user()
 def commit(pid, cid):
@@ -202,7 +246,7 @@ def commit(pid, cid):
         project = md.Project.get(id=pid)
         commit = md.Commit.get(id=cid)
     except:
-        abort(404)
+        f.abort(404)
     
     return f.render_template('commit.html', commit=commit, project=project)
 

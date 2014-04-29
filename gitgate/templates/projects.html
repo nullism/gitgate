@@ -10,6 +10,7 @@
 <a class="btn btn-primary" href="{{url_for('commits', pid=p.id)}}?status_filter=committed">View Commits</a>
 {% if user.is_admin %}
 <a class="btn btn-info" href="{{url_for('project_roles', pid=p.id)}}">Roles</a>
+<a class="btn btn-default" href="{{url_for('project_branches', pid=p.id)}}">Branches</a>
 {% endif %}
 </div>
 {% endfor %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %} Branches for {{project.name}} {% endblock %}
+{% block content %}
+<h1>Branches for {{project.name}}</h1>
+<h3><a href="{{url_for('projects')}}">back to projects</a></h3>
+<div class="well">
+<h3>Tracked branches</h3>
+
+<ul>
+{% for branch in project.branches %}
+<li>
+<form role="form" method="post" action="{{url_for('project_branches', pid=project.id)}}">
+{{branch.name}}
+{% if user.is_admin %}
+    <input type="hidden" name="rm_branch" value="{{branch.name}}" />
+    <button type="submit" class="btn btn-danger btn-xs">
+        <span class="glyphicon glyphicon-trash"></span>
+    </button>
+{% endif %}
+</form>
+</li>
+{% endfor %}
+</ul>
+
+<form role="form" method="post" action="{{url_for('project_branches', pid=project.id)}}"
+        class="form-inline">
+    <div class="form-group">
+        <input type="text" name="add_branch" placeholder="track branch name" class="form-control" />
+    </div>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Track</button>
+    </div>
+</form>
+</div>
+{% endblock %}

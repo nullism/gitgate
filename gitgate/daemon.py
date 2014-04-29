@@ -117,10 +117,10 @@ def start():
             for branch in project.branches:
                 try:
                     project.git_control.update_all(branch=branch.name)
+                    check_for_commits(project, branch=branch.name)
                 except Exception as err:
                     # Git can sometimes reject pulls in larger projects
                     logger.exception(err)
-                check_for_commits(project, branch=branch.name)
             handle_approved(project)
         time.sleep(10)
 
