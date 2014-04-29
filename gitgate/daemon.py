@@ -5,6 +5,7 @@ import logging
 import sys
 import re
 import datetime
+import ggconf
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
@@ -43,8 +44,8 @@ def clone_commit(new_sha1, old_sha1, file_changes, details):
 
     return commit
 
-def check_for_commits(project):
-    sha1s = project.git_control.get_sha1_diffs()
+def check_for_commits(project, branch='master'):
+    sha1s = project.git_control.get_sha1_diffs(branch=branch)
     handled_sha1s = [c.sha1 for c in project.commits]
 
     for sha1 in sha1s:
@@ -75,7 +76,7 @@ def check_for_commits(project):
         
         # Create the commit and its files
         if not commit:    
-            commit = dbm.Commit.create(sha1=sha1, project=project, branch='master',
+            commit = dbm.Commit.create(sha1=sha1, project=project, branch=branch,
                 author_date=details['author_date'], author_name=details['author_name'],
                 author_email=details['author_email'], status='committed',
                 message=details['message'])
@@ -113,8 +114,13 @@ def start():
     while running:
         projects = dbm.Project.select()
         for project in projects:
-            project.git_control.update_all()
-            check_for_commits(project)
+            for branch in project.branches:
+                try:
+                    project.git_control.update_all(branch=branch.name)
+                except Exception as err:
+                    # Git can sometimes reject pulls in larger projects
+                    logger.exception(err)
+                check_for_commits(project, branch=branch.name)
             handle_approved(project)
         time.sleep(10)
 

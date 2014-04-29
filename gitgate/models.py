@@ -9,6 +9,7 @@ def create_tables():
     User.create_table()
     Role.create_table()
     Project.create_table()
+    ProjectBranch.create_table()
     ProjectRole.create_table()
     Commit.create_table()
     CommitFile.create_table()
@@ -59,6 +60,14 @@ class Project(DBModel):
             return self._git_control
         self._git_control = util.GitProject(self)
         return self._git_control
+
+class ProjectBranch(DBModel):
+
+    name = CharField()
+    project = ForeignKeyField(Project, related_name='branches')
+
+    class Meta:
+        primary_key = CompositeKey('name', 'project')
 
 class Role(DBModel):
     

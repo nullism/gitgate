@@ -98,9 +98,26 @@ class GitProject(object):
     def stable_path(self):
         return os.path.join(self.config.path, 'stable')
 
-    def update_all(self):
-        git_command('pull', cwd=self.devel_path, args=['origin','master'])
-        git_command('pull', cwd=self.stable_path, args=['origin','master'])
+    def clone_branch_to_stable(self, branch):
+        try:
+            git_command('fetch', cwd=self.stable_path, args=['--all'])
+            git_command('checkout', cwd=self.stable_path, args=[branch])
+        except:
+            git_command('checkout', cwd=self.stable_path, 
+                args=['-b',branch,'devel/%s'%(branch)])
+            git_command('push', cwd=self.stable_path, args=['origin',branch]) 
+        
+    
+    def update_all(self, branch='master'):
+        git_command('fetch', cwd=self.devel_path, args=['--all'])
+        git_command('checkout', cwd=self.devel_path, args=[branch])
+        git_command('pull', cwd=self.devel_path, args=['origin',branch])
+        try:
+            git_command('fetch', cwd=self.stable_path, args=['--all'])
+            git_command('checkout', cwd=self.stable_path, args=[branch])
+        except:
+            self.clone_branch_to_stable(branch)
+        git_command('pull', cwd=self.stable_path, args=['origin',branch])
 
     def create_devel_checkout(self):
         if os.path.exists(self.devel_path):
@@ -169,6 +186,7 @@ class GitProject(object):
         """ Returns a list of commit hashes not in stable """
 
         git_command('fetch', cwd=self.stable_path, args=['--all'])
+        git_command('checkout', cwd=self.stable_path, args=[branch])
 
         args = [branch, 'remotes/devel/%s'%(branch)]
 

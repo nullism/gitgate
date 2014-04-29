@@ -303,7 +303,8 @@ def commit_file(pid, cid):
         context = 200
 
     diff = commit.project.git_control.get_unified_diff(
-        commit.sha1, commit_file.file_path, context=context)
+        commit.sha1, commit_file.file_path, context=context,
+        branch=commit.branch)
     if not diff:
         diff = ("diff output: \"This commit's file changes "
             "do not differ from stable\"")

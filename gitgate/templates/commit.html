@@ -14,6 +14,9 @@
     </td>
 </tr>
 <tr>
+    <td>Branch</td><td><b>{{commit.branch}}</b></td>
+</tr>
+<tr>
     <td>Date</td><td>{{commit.author_date}}</td>
 </tr>
 <tr>
@@ -48,14 +51,14 @@
 
 {% if user.has_project_role(commit.project, 'reviewer') %}
 <form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='review')}}"
-    method="post" role="form">
+    method="post" role="form" class="pull-left">
     <button type="submit" class="btn btn-success">Review</button>
 </form>
 {% endif %}
 
 {% if user.has_project_role(commit.project, 'approver') or user.has_project_role(commit.project, 'reviewer') %}
 <form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='reject')}}"
-    method="post" role="form">
+    method="post" role="form" class="pull-left">
     <button type="submit" class="btn btn-danger">Reject</button>
 </form>
 {% endif %}
@@ -63,14 +66,14 @@
 {% elif commit.status == 'reviewed' %}
 {% if user.has_project_role(commit.project, 'approver') %}
 <form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='approve')}}"
-    method="post" role="form">
+    method="post" role="form" class="pull-left">
     <button type="submit" class="btn btn-success">Approve</button>
 </form>
 {% endif %}
 
 {% if user.has_project_role(commit.project, 'approver') or user.has_project_role(commit.project, 'reviewer') %}
 <form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='reject')}}"
-    method="post" role="form">
+    method="post" role="form" class="pull-left">
     <button type="submit" class="btn btn-danger">Reject</button>
 </form>
 {% endif %}
@@ -78,13 +81,14 @@
 {% elif commit.status == 'rejected' %}
 {% if user.has_project_role(commit.project, 'approver') or user.has_project_role(commit.project, 'reviewer') %}
 <form action="{{ url_for('commit_action', pid=commit.project.id, cid=commit.id, action='unreject')}}"
-    method="post" role="form">
+    method="post" role="form" class="pull-left">
     <button type="submit" class="btn btn-warning">Un-reject</button>
 </form>
 {% endif %}
 
-
 {% endif %}
+<div style="clear: both;"></div>
+
 </div>
 
 <div>
